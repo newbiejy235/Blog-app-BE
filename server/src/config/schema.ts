@@ -11,6 +11,13 @@ export const USER_ROLES = ["user", "admin", "guest"] as const;
 
 export const POST_STATUS = ["delete", "published"] as const;
 
+export const POST_CATEGORIES = [
+  "lifestyle",
+  "business",
+  "technology",
+  "health",
+] as const;
+
 // USERS
 export const usersTable = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -22,6 +29,12 @@ export const usersTable = mysqlTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// CATEGORIES
+export const categoriesTable = mysqlTable("tabel_kategoori", {
+  id: int("id").autoincrement().primaryKey(),
+  kategoriBlog: mysqlEnum("kategori", POST_CATEGORIES).notNull(),
+});
+
 // POSTS
 export const postsTable = mysqlTable("posts", {
   id: int("id").autoincrement().primaryKey(),
@@ -30,6 +43,9 @@ export const postsTable = mysqlTable("posts", {
     .references(() => usersTable.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
+  kategori: int("kategori")
+    .notNull()
+    .references(() => categoriesTable.id),
   imageUrl: text("image_url"), // Kolom untuk simpan URL gambar
   imagePublicId: varchar("image_public_id", { length: 255 }), // Kolom untuk simpan Public ID Cloudinary
   status: mysqlEnum("status", POST_STATUS).notNull().default("published"),
