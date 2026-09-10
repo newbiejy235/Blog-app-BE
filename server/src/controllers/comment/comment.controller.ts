@@ -9,19 +9,19 @@ import {
 import { and, eq } from "drizzle-orm";
 
 class CommentController {
-  postComment = async (req: AuthRequest, res: Response) => {
+  postComment = async (req: Request, res: Response) => {
     try {
       const commentValidation = commentSchema.parse(req.body);
-      const { postId, comment } = commentValidation;
+      const { userId, postId, comment } = commentValidation;
 
-      if (!req.user) {
+      if (!userId) {
         return res.status(401).json({
           success: false,
           message: "User belum login",
         });
       }
 
-      const userId = req.user.id;
+      // const userId = req.user.id;
 
       const userComments = await db.insert(commentsTable).values({
         userId,
