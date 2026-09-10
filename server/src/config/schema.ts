@@ -7,7 +7,7 @@ import {
   timestamp,
 } from "drizzle-orm/mysql-core";
 
-export const USER_ROLES = ["user", "admin", "guest"] as const;
+export const USER_ROLES = ["user", "admin"] as const;
 
 export const POST_STATUS = ["delete", "published"] as const;
 
@@ -43,7 +43,7 @@ export const postsTable = mysqlTable("posts", {
     .references(() => usersTable.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
-  kategori: int("kategori")
+  kategoriId: int("kategori")
     .notNull()
     .references(() => categoriesTable.id),
   imageUrl: text("image_url"), // Kolom untuk simpan URL gambar

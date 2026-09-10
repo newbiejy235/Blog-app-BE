@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createPostSchema = z.object({
   userId: z.coerce.number().int().positive(),
+  kategoriId: z.coerce.number().int().positive(),
 
   title: z
     .string()

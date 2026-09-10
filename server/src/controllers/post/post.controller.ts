@@ -17,7 +17,7 @@ export class PostController {
   crreatePost = async (req: Request, res: Response) => {
     try {
       const validateData = createPostSchema.parse(req.body);
-      const { userId, title, content } = validateData;
+      const { userId, title, content, kategoriId } = validateData;
 
       let imageUrl: string | undefined;
       let imagePublicId: string | undefined;
@@ -30,8 +30,10 @@ export class PostController {
 
       const [insertedPost] = await db
         .insert(postsTable)
-        .values({ userId, title, content, imageUrl, imagePublicId })
+        .values({ userId, title, content, imageUrl, imagePublicId, kategoriId })
         .$returningId();
+      // .values()
+      // .$returningId();
 
       const newPost = await db.query.postsTable.findFirst({
         where: eq(postsTable.id, insertedPost.id),
@@ -178,31 +180,32 @@ export class PostController {
       const { id } = validatedParams;
 
       const existingPost = await db.query.postsTable.findFirst({
-        where : eq(postsTable.id, id)
-      })
+        where: eq(postsTable.id, id),
+      });
 
       if (!existingPost) {
         return res.status(404).json({
-          success : false,
-          message : "post not found"
-        })
-
-
+          success: false,
+          message: "post not found",
+        });
       }
 
-      await db.update(postsTable).set({status :"delete"}).where(eq(postsTable.id, id))
+      await db
+        .update(postsTable)
+        .set({ status: "delete" })
+        .where(eq(postsTable.id, id));
 
       return res.status(200).json({
-        success : true, 
-        message : "post deleted successfully"
-      })
+        success: true,
+        message: "post deleted successfully",
+      });
     } catch (error: any) {
-      console.error("Delete post error :", error)
+      console.error("Delete post error :", error);
       return res.status(500).json({
-        success : false,
-        message : "Internal server error",
-        error : error.message
-      })
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
     }
   };
 }
