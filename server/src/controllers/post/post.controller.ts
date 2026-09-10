@@ -82,6 +82,7 @@ export class PostController {
     }
   };
 
+  // search
   getBySearch = async (req: Request, res: Response) => {
     try {
       const validateData = getBySearch.parse(req.params);
