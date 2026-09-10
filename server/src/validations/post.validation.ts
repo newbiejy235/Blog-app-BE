@@ -12,6 +12,13 @@ export const createPostSchema = z.object({
   content: z.string().min(10, "content minimal 10 huruf"),
 });
 
+export const getBySearch = z.object({
+  title: z
+    .string()
+    .min(3, "title minimal 3 huruf")
+    .max(255, "title max 255 huruf"),
+});
+
 export const getCategories = z.object({
   kategoriId: z.coerce.number().int().positive(),
 });

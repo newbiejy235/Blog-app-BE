@@ -11,6 +11,8 @@ router.get("/", uploadSingleImages, PostController.getAll);
 router.get("/detail/:id", uploadSingleImages, PostController.detail);
 // kategori
 router.get("/:kategoriId", uploadSingleImages, PostController.getByCategories);
+// search
+router.get("/:title", uploadSingleImages, PostController.getBySearch);
 
 router.patch("/:id", 
     authenticate,
