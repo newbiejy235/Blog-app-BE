@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   createPostSchema,
+  getCategories,
   postIdSchema,
   updatePostParamsSchema,
   updatePostSchema,
@@ -52,6 +53,30 @@ export class PostController {
         success: false,
         message: "Terjadi kesalahan pada server",
         error: error instanceof Error ? error.message : error,
+      });
+    }
+  };
+
+  getByCategories = async (req: Request, res: Response) => {
+    try {
+      const validateData = getCategories.parse(req.params);
+      const { kategoriId } = validateData;
+      const data = await db
+        .select()
+        .from(postsTable)
+        .where(eq(postsTable.kategoriId, kategoriId));
+      return res.json({
+        success: true,
+        message: "berhasil get",
+        data: {
+          postData: data,
+        },
+      });
+    } catch (error) {
+      return res.status(201).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+        error: error,
       });
     }
   };

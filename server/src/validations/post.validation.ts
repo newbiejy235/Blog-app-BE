@@ -12,6 +12,10 @@ export const createPostSchema = z.object({
   content: z.string().min(10, "content minimal 10 huruf"),
 });
 
+export const getCategories = z.object({
+  kategoriId: z.coerce.number().int().positive(),
+});
+
 export const postIdSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
