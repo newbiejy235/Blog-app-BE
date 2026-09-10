@@ -15,7 +15,7 @@ export const createPostSchema = z.object({
 export const getBySearch = z.object({
   title: z
     .string()
-    .min(3, "title minimal 3 huruf")
+    .min(1, "title minimal 1 huruf")
     .max(255, "title max 255 huruf"),
 });
 
