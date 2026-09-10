@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   createPostSchema,
+  getBySearch,
   getCategories,
   postIdSchema,
   updatePostParamsSchema,
@@ -8,7 +9,7 @@ import {
 } from "../../validations/post.validation";
 import { db } from "../../config/db";
 import { postsTable } from "../../config/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, like } from "drizzle-orm";
 import {
   deleteFromCloudinary,
   uploadToCloudinary,
@@ -49,7 +50,7 @@ export class PostController {
       });
     } catch (error) {
       console.error("Failed to post image,error : ", error);
-      return res.status(201).json({
+      return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan pada server",
         error: error instanceof Error ? error.message : error,
@@ -73,7 +74,38 @@ export class PostController {
         },
       });
     } catch (error) {
-      return res.status(201).json({
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+        error: error,
+      });
+    }
+  };
+
+  getBySearch = async (req: Request, res: Response) => {
+    try {
+      const validateData = getBySearch.parse(req.params);
+      const { title } = validateData;
+      const data = await db
+        .select()
+        .from(postsTable)
+        .where(like(postsTable.title, `%${title}%`));
+
+      if (data.length == 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Data tidak ditemukan",
+        });
+      }
+      return res.json({
+        success: true,
+        message: "berhasil get",
+        data: {
+          postData: data,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan pada server",
         error: error,
@@ -96,7 +128,7 @@ export class PostController {
         },
       });
     } catch (error) {
-      return res.status(201).json({
+      return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan pada server",
         error: error,
@@ -121,7 +153,7 @@ export class PostController {
         },
       });
     } catch (error) {
-      return res.status(201).json({
+      return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan pada server",
         error: error,
