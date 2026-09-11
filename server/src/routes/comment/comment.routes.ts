@@ -6,6 +6,8 @@ const router = Router();
 
 // menambahkan komentar
 router.post("/", authenticate, commentController.postComment);
+
+// tampilin komentar
 router.get("/:postId", commentController.getComment);
 
 
