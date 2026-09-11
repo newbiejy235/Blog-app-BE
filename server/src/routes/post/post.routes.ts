@@ -10,6 +10,7 @@ router.post("/", authenticate, uploadSingleImages, PostController.crreatePost);
 // ambil semua data post
 router.get("/", uploadSingleImages, PostController.getAll);
 
+// detail
 router.get("/detail/:id", uploadSingleImages, PostController.detail);
 // kategori
 router.get("/:kategoriId", uploadSingleImages, PostController.getByCategories);
