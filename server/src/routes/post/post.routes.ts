@@ -8,6 +8,7 @@ const router = Router();
 
 router.post("/", authenticate, uploadSingleImages, PostController.crreatePost);
 router.get("/", uploadSingleImages, PostController.getAll);
+
 router.get("/detail/:id", uploadSingleImages, PostController.detail);
 // kategori
 router.get("/:kategoriId", uploadSingleImages, PostController.getByCategories);
