@@ -17,6 +17,7 @@ router.get("/:kategoriId", uploadSingleImages, PostController.getByCategories);
 // search
 router.get("/search/:title", uploadSingleImages, PostController.getBySearch);
 
+// update/edit blog
 router.patch("/:id", 
     authenticate,
     uploadSingleImages, PostController.updatePost
