@@ -5,7 +5,7 @@ import { authenticate } from "../../middleware/auth.middleware";
 import postController from "../../controllers/post/post.controller";
 
 const router = Router();
-
+// ambil semua data post dari user yang sudah login
 router.post("/", authenticate, uploadSingleImages, PostController.crreatePost);
 router.get("/", uploadSingleImages, PostController.getAll);
 
