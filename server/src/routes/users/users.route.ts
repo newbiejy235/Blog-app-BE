@@ -6,6 +6,7 @@ const router = Router()
 
 // get user by id
 router.get('/:userId', authenticate, usersConttroller.getPostByUserId )
+// get data post user by id
 router.get('/:userId/posts/:postId', authenticate, usersConttroller.getUserPost )
 
 export default router
