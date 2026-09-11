@@ -5,6 +5,7 @@ import { authenticate } from "../../middleware/auth.middleware";
 const router = Router()
 
 router.post("/", authenticate, favoriteController.postFavorite)
-router.get("/:userId/post/:postId", authenticate, favoriteController.postFavorite)
+
+router.get("/:userId/post/:postId", authenticate, favoriteController.getFavorite)
 
 export default router

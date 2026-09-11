@@ -54,6 +54,25 @@ export class FavoriteController {
       data: like,
     });
   };
+
+  deleteFavorite = async (req: Request, res: Response) => {
+    const validation = favoriteValidation.parse(req.params);
+    const { userId, postId } = validation;
+
+    await db
+      .delete(favoritesTable)
+      .where(
+        and(
+          eq(favoritesTable.userId, userId),
+          eq(favoritesTable.postId, postId),
+        ),
+      );
+
+    return res.status(200).json({
+      success: true,
+      message: "berhasil menghapus dari favorite",
+    });
+  };
 }
 
 export default new FavoriteController();
