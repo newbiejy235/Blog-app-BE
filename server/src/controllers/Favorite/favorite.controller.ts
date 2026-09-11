@@ -6,7 +6,7 @@ import { and, count, eq } from "drizzle-orm";
 
 export class FavoriteController {
   postFavorite = async (req: Request, res: Response) => {
-    const validation = favoriteValidation.parse(req.params);
+    const validation = favoriteValidation.parse(req.body);
     const { userId, postId } = validation;
 
     if (!userId) {
