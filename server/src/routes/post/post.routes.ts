@@ -23,7 +23,7 @@ router.patch("/:id",
     uploadSingleImages, PostController.updatePost
 )
 
-
+// delete
 router.delete("/:id", 
     authenticate,
     postController.deletePost
