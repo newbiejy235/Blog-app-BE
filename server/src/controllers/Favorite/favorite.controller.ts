@@ -28,32 +28,27 @@ export class FavoriteController {
   };
 
   getFavorite = async (req: Request, res: Response) => {
-    const validation = favoriteValidation.parse(req.params);
-    const { userId, postId } = validation;
+  const validation = favoriteValidation.parse(req.params);
+  const { userId, postId } = validation;
 
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "silahkan login terlebih dahulu",
-      });
-    }
+  const favorite = await db
+    .select({
+      id: favoritesTable.id,
+    })
+    .from(favoritesTable)
+    .where(
+      and(
+        eq(favoritesTable.userId, userId),
+        eq(favoritesTable.postId, postId)
+      )
+    );
 
-    const like = await db
-      .select({ favoriteCount: count(favoritesTable.id) })
-      .from(favoritesTable)
-      .where(
-        and(
-          eq(favoritesTable.userId, userId),
-          eq(favoritesTable.postId, postId),
-        ),
-      );
+  return res.status(200).json({
+    success: true,
+    isFavorite: favorite.length > 0,
+  });
+};
 
-    return res.status(200).json({
-      success: true,
-      message: "berhaasil menambahkan ke favorite",
-      data: like,
-    });
-  };
 
   deleteFavorite = async (req: Request, res: Response) => {
     const validation = favoriteValidation.parse(req.params);
