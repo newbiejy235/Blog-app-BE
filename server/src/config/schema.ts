@@ -5,6 +5,8 @@ import {
   varchar,
   text,
   timestamp,
+  unique,
+  primaryKey,
 } from "drizzle-orm/mysql-core";
 
 export const USER_ROLES = ["user", "admin"] as const;
@@ -65,4 +67,16 @@ export const commentsTable = mysqlTable("comments", {
   comment: text("comment").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+export const favoritesTable = mysqlTable("favorites", {
+  id: int("id").autoincrement().primaryKey(),
+
+  userId: int("user_id")
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+
+  postId: int("post_id")
+    .notNull()
+    .references(() => postsTable.id, { onDelete: "cascade" }),
 });
