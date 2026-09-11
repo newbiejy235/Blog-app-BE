@@ -4,6 +4,7 @@ import { authenticate } from "../../middleware/auth.middleware";
 
 const router = Router();
 
+// menambahkan komentar
 router.post("/", authenticate, commentController.postComment);
 router.get("/:postId", commentController.getComment);
 
