@@ -2,14 +2,12 @@ import { Router } from "express";
 import favoriteController from "../../controllers/Favorite/favorite.controller";
 import { authenticate } from "../../middleware/auth.middleware";
 
-const router = Router()
+const router = Router();
 
-router.post("/", authenticate, favoriteController.postFavorite)
-router.delete(
-  "/:userId/post/:postId",
-  authenticate,
-  favoriteController.deleteFavorite
-);
-router.get("/:userId/post/:postId", authenticate, favoriteController.getFavorite)
+router.get("/", authenticate, favoriteController.getFavorite);
+router.post("/liked", authenticate, favoriteController.postFavorite);
+router.post("/disliked", authenticate, favoriteController.deleteFavorite);
 
-export default router
+
+
+export default router;

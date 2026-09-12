@@ -20,6 +20,8 @@ export const POST_CATEGORIES = [
   "health",
 ] as const;
 
+export const FAVORITE_STATUS = ["like", "dislike"] as const;
+
 // USERS
 export const usersTable = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -69,14 +71,33 @@ export const commentsTable = mysqlTable("comments", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
-export const favoritesTable = mysqlTable("favorites", {
-  id: int("id").autoincrement().primaryKey(),
+export const favoritesTable = mysqlTable(
+  "favorites",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    postId: int("post_id")
+      .notNull()
+      .references(() => postsTable.id, { onDelete: "cascade" }),
+    status: mysqlEnum("status", FAVORITE_STATUS).notNull().default("dislike"),
+  },
+  (table) => ({
+    uniqueUserPost: unique("unique_user_post").on(table.userId, table.postId),
+  }),
+);
 
-  userId: int("user_id")
-    .notNull()
-    .references(() => usersTable.id, { onDelete: "cascade" }),
-
-  postId: int("post_id")
-    .notNull()
-    .references(() => postsTable.id, { onDelete: "cascade" }),
-});
+export const markTable = mysqlTable(
+  "Mark",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    postId: int("post_id")
+      .notNull()
+      .references(() => postsTable.id, { onDelete: "cascade" }),
+    status: mysqlEnum("status", POST_STATUS).notNull().default("published"),
+  }
+);

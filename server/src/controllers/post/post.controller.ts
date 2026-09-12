@@ -8,8 +8,8 @@ import {
   updatePostSchema,
 } from "../../validations/post.validation";
 import { db } from "../../config/db";
-import { postsTable } from "../../config/schema";
-import { eq, and, desc, like } from "drizzle-orm";
+import { favoritesTable, postsTable } from "../../config/schema";
+import { eq, and, desc, like, count, sql } from "drizzle-orm";
 import {
   deleteFromCloudinary,
   uploadToCloudinary,
@@ -114,13 +114,47 @@ export class PostController {
     }
   };
 
-  getAll = async (req: Request, res: Response) => {
+getAll = async (req: Request, res: Response) => {
     try {
       const data = await db
-        .select()
+        .select({
+          id: postsTable.id,
+          userId: postsTable.userId,
+          title: postsTable.title,
+          content: postsTable.content,
+          kategoriId: postsTable.kategoriId,
+          imageUrl: postsTable.imageUrl,
+          imagePublicId: postsTable.imagePublicId,
+          status: postsTable.status,
+          createdAt: postsTable.createdAt,
+          updatedAt: postsTable.updatedAt,
+
+          favoriteStatus: favoritesTable.status,
+          
+          // UBAH BAGIAN INI: Hanya hitung jika status di tabel favorit adalah 'like'
+          favoriteCount: sql<number>`count(case when ${favoritesTable.status} = 'like' then 1 end)`.mapWith(Number),
+        })
         .from(postsTable)
+        .leftJoin(
+          favoritesTable,
+          eq(postsTable.id, favoritesTable.postId), // and() tidak wajib jika hanya 1 kondisi
+        )
+        .where(eq(postsTable.status, "published"))
         .orderBy(desc(postsTable.createdAt))
-        .where(eq(postsTable.status, "published"));
+        .groupBy(
+          postsTable.id,
+          postsTable.userId,
+          postsTable.title,
+          postsTable.content,
+          postsTable.kategoriId,
+          postsTable.imageUrl,
+          postsTable.imagePublicId,
+          postsTable.status,
+          postsTable.createdAt,
+          postsTable.updatedAt,
+          favoritesTable.status,
+        );
+
       return res.json({
         success: true,
         message: "berhasil get",
@@ -132,10 +166,11 @@ export class PostController {
       return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan pada server",
-        error: error,
+        error: error instanceof Error ? error.message : error, // Lebih aman untuk log
       });
     }
   };
+
 
   detail = async (req: Request, res: Response) => {
     try {
