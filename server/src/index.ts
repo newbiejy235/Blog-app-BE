@@ -4,6 +4,7 @@ import postRouter from "./routes/post/post.routes";
 import userRouter from "./routes/users/users.route";
 import comment from "./routes/comment/comment.routes"
 import favorite from "./routes/favorite/favorite.route"
+import mark from "./routes/mark/mark.route"
 import cors from "cors";
 
 const app = express();
@@ -16,6 +17,7 @@ app.use("/api/v1/post", postRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/comment", comment)
 app.use("/api/v1/favorite", favorite)
+app.use("/api/v1/mark", mark)
 
 app.get("/", (req, res) => {
   res.send("helllo");

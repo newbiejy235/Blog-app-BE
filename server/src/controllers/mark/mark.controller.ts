@@ -5,18 +5,13 @@ import { and, eq } from "drizzle-orm";
 import { markValidation } from "../../validations/mark.validation";
 
 class MarkController {
- postMarkUser = async (req: Request, res: Response) => {
-  try {
+  postMarkUser = async (req: Request, res: Response) => {
     const validation = markValidation.parse(req.body);
     const { postId } = validation;
-
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.id; // Ambil ID user dari middleware auth
 
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const blog = await db
@@ -36,19 +31,7 @@ class MarkController {
       userId: userId,
       postId: postId,
     });
-
-    return res.status(201).json({
-      success: true,
-      message: "berhasil menyimpan blog",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Terjadi kesalahan pada server",
-      error: error,
-    });
-  }
-};
+  };
 
   getMarkUser = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id; // Ambil ID user dari middleware auth
@@ -81,3 +64,5 @@ class MarkController {
     });
   };
 }
+
+export default new MarkController();
