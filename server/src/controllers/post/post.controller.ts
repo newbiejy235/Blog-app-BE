@@ -65,7 +65,12 @@ export class PostController {
       const data = await db
         .select()
         .from(postsTable)
-        .where(eq(postsTable.kategoriId, kategoriId));
+        .where(
+          and(
+            eq(postsTable.kategoriId, kategoriId),
+            eq(postsTable.status, "published"),
+          ),
+        );
       return res.json({
         success: true,
         message: "berhasil get",
@@ -92,8 +97,8 @@ export class PostController {
         .from(postsTable)
         .where(
           and(
-            like(postsTable.title, `%${title}%`),
             eq(postsTable.status, "published"),
+            like(postsTable.title, `%${title}%`),
           ),
         );
 
