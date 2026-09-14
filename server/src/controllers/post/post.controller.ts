@@ -139,7 +139,7 @@ export class PostController {
           favoriteStatus: favoritesTable.status,
           markStatus: markTable.status,
 
-          // UBAH BAGIAN INI: Hanya hitung jika status di tabel favorit adalah 'like'
+          // fix favorite count
           favoriteCount: sql<number>`
     (
       SELECT COUNT(*)
