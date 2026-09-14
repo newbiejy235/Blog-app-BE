@@ -90,7 +90,12 @@ export class PostController {
       const data = await db
         .select()
         .from(postsTable)
-        .where(like(postsTable.title, `%${title}%`));
+        .where(
+          and(
+            like(postsTable.title, `%${title}%`),
+            eq(postsTable.status, "published"),
+          ),
+        );
 
       if (data.length == 0) {
         return res.status(404).json({
