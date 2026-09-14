@@ -8,7 +8,7 @@ import {
   updatePostSchema,
 } from "../../validations/post.validation";
 import { db } from "../../config/db";
-import { favoritesTable, postsTable } from "../../config/schema";
+import { favoritesTable, postsTable, markTable } from "../../config/schema";
 import { eq, and, desc, like, count, sql } from "drizzle-orm";
 import {
   deleteFromCloudinary,
@@ -114,8 +114,15 @@ export class PostController {
     }
   };
 
-getAll = async (req: Request, res: Response) => {
+  getIsUserAuth = async (req: Request, res: Response) => {
     try {
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
+      }
       const data = await db
         .select({
           id: postsTable.id,
@@ -130,9 +137,88 @@ getAll = async (req: Request, res: Response) => {
           updatedAt: postsTable.updatedAt,
 
           favoriteStatus: favoritesTable.status,
-          
+          markStatus: markTable.status,
+
           // UBAH BAGIAN INI: Hanya hitung jika status di tabel favorit adalah 'like'
-          favoriteCount: sql<number>`count(case when ${favoritesTable.status} = 'like' then 1 end)`.mapWith(Number),
+          favoriteCount: sql<number>`
+    (
+      SELECT COUNT(*)
+      FROM favorites
+      WHERE favorites.post_id = ${postsTable.id}
+      AND favorites.status = 'like'
+    )
+  `.mapWith(Number),
+        })
+        .from(postsTable)
+        .leftJoin(
+          favoritesTable,
+          and(
+            eq(postsTable.id, favoritesTable.postId), // and() tidak wajib jika hanya 1 kondisi
+            eq(favoritesTable.userId, userId),
+          ),
+        )
+        .leftJoin(
+          markTable,
+          and(
+            eq(postsTable.id, markTable.postId),
+            eq(markTable.userId, userId),
+          ),
+        )
+        .where(eq(postsTable.status, "published"))
+        .orderBy(desc(postsTable.createdAt))
+        .groupBy(
+          postsTable.id,
+          postsTable.userId,
+          postsTable.title,
+          postsTable.content,
+          postsTable.kategoriId,
+          postsTable.imageUrl,
+          postsTable.imagePublicId,
+          postsTable.status,
+          postsTable.createdAt,
+          postsTable.updatedAt,
+          favoritesTable.status,
+          markTable.status,
+        );
+
+      return res.json({
+        success: true,
+        message: "berhasil get",
+        data: {
+          postData: data,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+        error: error instanceof Error ? error.message : error, // Lebih aman untuk log
+      });
+    }
+  };
+
+  getAll = async (req: Request, res: Response) => {
+    try {
+      const data = await db
+        .select({
+          id: postsTable.id,
+          userId: postsTable.userId,
+          title: postsTable.title,
+          content: postsTable.content,
+          kategoriId: postsTable.kategoriId,
+          imageUrl: postsTable.imageUrl,
+          imagePublicId: postsTable.imagePublicId,
+          status: postsTable.status,
+          createdAt: postsTable.createdAt,
+          updatedAt: postsTable.updatedAt,
+
+          // favoriteStatus: favoritesTable.status,
+
+          // UBAH BAGIAN INI: Hanya hitung jika status di tabel favorit adalah 'like'
+          favoriteCount:
+            sql<number>`count(case when ${favoritesTable.status} = 'like' then 1 end)`.mapWith(
+              Number,
+            ),
         })
         .from(postsTable)
         .leftJoin(
@@ -152,7 +238,7 @@ getAll = async (req: Request, res: Response) => {
           postsTable.status,
           postsTable.createdAt,
           postsTable.updatedAt,
-          favoritesTable.status,
+          // favoritesTable.status,
         );
 
       return res.json({
@@ -170,7 +256,6 @@ getAll = async (req: Request, res: Response) => {
       });
     }
   };
-
 
   detail = async (req: Request, res: Response) => {
     try {

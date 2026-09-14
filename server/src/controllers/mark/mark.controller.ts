@@ -131,7 +131,7 @@ class MarkController {
       .leftJoin(postsTable, eq(markTable.postId, postsTable.id))
       .where(
         and(
-          eq(markTable.userId, userId),
+          eq(markTable.userId, userId), 
           eq(markTable.status, "marked"),
           eq(postsTable.status, "published"),
         ),
