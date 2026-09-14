@@ -4,7 +4,11 @@ import usersConttroller from "../../controllers/users/users.conttroller";
 
 const router = Router()
 
+// get user by id
 router.get('/:userId', authenticate, usersConttroller.getPostByUserId )
+// get data post user by id
 router.get('/:userId/posts/:postId', authenticate, usersConttroller.getUserPost )
+// get user info
+router.get("/info/:userId", authenticate, usersConttroller.getUserInfo)
 
 export default router

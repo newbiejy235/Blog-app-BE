@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createPostSchema = z.object({
   userId: z.coerce.number().int().positive(),
+  kategoriId: z.coerce.number().int().positive(),
 
   title: z
     .string()
@@ -9,6 +10,17 @@ export const createPostSchema = z.object({
     .max(255, "title max 255 huruf"),
 
   content: z.string().min(10, "content minimal 10 huruf"),
+});
+
+export const getBySearch = z.object({
+  title: z
+    .string()
+    .min(1, "title minimal 1 huruf")
+    .max(255, "title max 255 huruf"),
+});
+
+export const getCategories = z.object({
+  kategoriId: z.coerce.number().int().positive(),
 });
 
 export const postIdSchema = z.object({

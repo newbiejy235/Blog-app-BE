@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
 import {
   createPostSchema,
+  getBySearch,
+  getCategories,
   postIdSchema,
   updatePostParamsSchema,
   updatePostSchema,
 } from "../../validations/post.validation";
 import { db } from "../../config/db";
-import { postsTable } from "../../config/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { favoritesTable, postsTable, markTable } from "../../config/schema";
+import { eq, and, desc, like, count, sql } from "drizzle-orm";
 import {
   deleteFromCloudinary,
   uploadToCloudinary,
@@ -17,7 +19,7 @@ export class PostController {
   crreatePost = async (req: Request, res: Response) => {
     try {
       const validateData = createPostSchema.parse(req.body);
-      const { userId, title, content } = validateData;
+      const { userId, title, content, kategoriId } = validateData;
 
       let imageUrl: string | undefined;
       let imagePublicId: string | undefined;
@@ -30,8 +32,10 @@ export class PostController {
 
       const [insertedPost] = await db
         .insert(postsTable)
-        .values({ userId, title, content, imageUrl, imagePublicId })
+        .values({ userId, title, content, imageUrl, imagePublicId, kategoriId })
         .$returningId();
+      // .values()
+      // .$returningId();
 
       const newPost = await db.query.postsTable.findFirst({
         where: eq(postsTable.id, insertedPost.id),
@@ -46,7 +50,7 @@ export class PostController {
       });
     } catch (error) {
       console.error("Failed to post image,error : ", error);
-      return res.status(201).json({
+      return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan pada server",
         error: error instanceof Error ? error.message : error,
@@ -54,13 +58,14 @@ export class PostController {
     }
   };
 
-  getAll = async (req: Request, res: Response) => {
+  getByCategories = async (req: Request, res: Response) => {
     try {
+      const validateData = getCategories.parse(req.params);
+      const { kategoriId } = validateData;
       const data = await db
         .select()
         .from(postsTable)
-        .orderBy(desc(postsTable.createdAt))
-        .where(eq(postsTable.status, "published"));
+        .where(eq(postsTable.kategoriId, kategoriId));
       return res.json({
         success: true,
         message: "berhasil get",
@@ -69,10 +74,185 @@ export class PostController {
         },
       });
     } catch (error) {
-      return res.status(201).json({
+      return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan pada server",
         error: error,
+      });
+    }
+  };
+
+  // search
+  getBySearch = async (req: Request, res: Response) => {
+    try {
+      const validateData = getBySearch.parse(req.params);
+      const { title } = validateData;
+      const data = await db
+        .select()
+        .from(postsTable)
+        .where(like(postsTable.title, `%${title}%`));
+
+      if (data.length == 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Data tidak ditemukan",
+        });
+      }
+      return res.json({
+        success: true,
+        message: "berhasil get",
+        data: {
+          postData: data,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+        error: error,
+      });
+    }
+  };
+
+  getIsUserAuth = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
+      }
+      const data = await db
+        .select({
+          id: postsTable.id,
+          userId: postsTable.userId,
+          title: postsTable.title,
+          content: postsTable.content,
+          kategoriId: postsTable.kategoriId,
+          imageUrl: postsTable.imageUrl,
+          imagePublicId: postsTable.imagePublicId,
+          status: postsTable.status,
+          createdAt: postsTable.createdAt,
+          updatedAt: postsTable.updatedAt,
+
+          favoriteStatus: favoritesTable.status,
+          markStatus: markTable.status,
+
+          // UBAH BAGIAN INI: Hanya hitung jika status di tabel favorit adalah 'like'
+          favoriteCount: sql<number>`
+    (
+      SELECT COUNT(*)
+      FROM favorites
+      WHERE favorites.post_id = ${postsTable.id}
+      AND favorites.status = 'like'
+    )
+  `.mapWith(Number),
+        })
+        .from(postsTable)
+        .leftJoin(
+          favoritesTable,
+          and(
+            eq(postsTable.id, favoritesTable.postId), // and() tidak wajib jika hanya 1 kondisi
+            eq(favoritesTable.userId, userId),
+          ),
+        )
+        .leftJoin(
+          markTable,
+          and(
+            eq(postsTable.id, markTable.postId),
+            eq(markTable.userId, userId),
+          ),
+        )
+        .where(eq(postsTable.status, "published"))
+        .orderBy(desc(postsTable.createdAt))
+        .groupBy(
+          postsTable.id,
+          postsTable.userId,
+          postsTable.title,
+          postsTable.content,
+          postsTable.kategoriId,
+          postsTable.imageUrl,
+          postsTable.imagePublicId,
+          postsTable.status,
+          postsTable.createdAt,
+          postsTable.updatedAt,
+          favoritesTable.status,
+          markTable.status,
+        );
+
+      return res.json({
+        success: true,
+        message: "berhasil get",
+        data: {
+          postData: data,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+        error: error instanceof Error ? error.message : error, // Lebih aman untuk log
+      });
+    }
+  };
+
+  getAll = async (req: Request, res: Response) => {
+    try {
+      const data = await db
+        .select({
+          id: postsTable.id,
+          userId: postsTable.userId,
+          title: postsTable.title,
+          content: postsTable.content,
+          kategoriId: postsTable.kategoriId,
+          imageUrl: postsTable.imageUrl,
+          imagePublicId: postsTable.imagePublicId,
+          status: postsTable.status,
+          createdAt: postsTable.createdAt,
+          updatedAt: postsTable.updatedAt,
+
+          // favoriteStatus: favoritesTable.status,
+
+          // UBAH BAGIAN INI: Hanya hitung jika status di tabel favorit adalah 'like'
+          favoriteCount:
+            sql<number>`count(case when ${favoritesTable.status} = 'like' then 1 end)`.mapWith(
+              Number,
+            ),
+        })
+        .from(postsTable)
+        .leftJoin(
+          favoritesTable,
+          eq(postsTable.id, favoritesTable.postId), // and() tidak wajib jika hanya 1 kondisi
+        )
+        .where(eq(postsTable.status, "published"))
+        .orderBy(desc(postsTable.createdAt))
+        .groupBy(
+          postsTable.id,
+          postsTable.userId,
+          postsTable.title,
+          postsTable.content,
+          postsTable.kategoriId,
+          postsTable.imageUrl,
+          postsTable.imagePublicId,
+          postsTable.status,
+          postsTable.createdAt,
+          postsTable.updatedAt,
+          // favoritesTable.status,
+        );
+
+      return res.json({
+        success: true,
+        message: "berhasil get",
+        data: {
+          postData: data,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+        error: error instanceof Error ? error.message : error, // Lebih aman untuk log
       });
     }
   };
@@ -94,7 +274,7 @@ export class PostController {
         },
       });
     } catch (error) {
-      return res.status(201).json({
+      return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan pada server",
         error: error,
@@ -178,31 +358,32 @@ export class PostController {
       const { id } = validatedParams;
 
       const existingPost = await db.query.postsTable.findFirst({
-        where : eq(postsTable.id, id)
-      })
+        where: eq(postsTable.id, id),
+      });
 
       if (!existingPost) {
         return res.status(404).json({
-          success : false,
-          message : "post not found"
-        })
-
-
+          success: false,
+          message: "post not found",
+        });
       }
 
-      await db.update(postsTable).set({status :"delete"}).where(eq(postsTable.id, id))
+      await db
+        .update(postsTable)
+        .set({ status: "delete" })
+        .where(eq(postsTable.id, id));
 
       return res.status(200).json({
-        success : true, 
-        message : "post deleted successfully"
-      })
+        success: true,
+        message: "post deleted successfully",
+      });
     } catch (error: any) {
-      console.error("Delete post error :", error)
+      console.error("Delete post error :", error);
       return res.status(500).json({
-        success : false,
-        message : "Internal server error",
-        error : error.message
-      })
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
     }
   };
 }
