@@ -5,10 +5,13 @@ import { and, eq } from "drizzle-orm";
 import { markValidation } from "../../validations/mark.validation";
 
 class MarkController {
+  // ============================================================
+  // ADD MARK
+  // ============================================================
   postMarkUser = async (req: Request, res: Response) => {
     const validation = markValidation.parse(req.body);
     const { postId } = validation;
-    const userId = (req as any).user?.id; // Ambil ID user dari middleware auth
+    const userId = (req as any).user?.id;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -27,14 +30,90 @@ class MarkController {
       });
     }
 
-    await db.insert(markTable).values({
-      userId: userId,
-      postId: postId,
+    const existing = await db
+      .select()
+      .from(markTable)
+      .where(and(eq(markTable.userId, userId), eq(markTable.postId, postId)))
+      .limit(1);
+
+    if (existing.length > 0 && existing[0].status === "marked") {
+      return res.status(409).json({
+        success: false,
+        message: "Post sudah ada di bookmark",
+        data: { postId, status: "marked" },
+      });
+    }
+
+    if (existing.length === 0) {
+      // Belum pernah mark -> insert baru
+      await db.insert(markTable).values({
+        userId,
+        postId,
+        status: "marked",
+      });
+    } else {
+      // Row sudah ada tapi statusnya "unmarked" -> update jadi marked lagi
+      await db
+        .update(markTable)
+        .set({ status: "marked" })
+        .where(eq(markTable.id, existing[0].id));
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Post ditandai",
+      data: { postId, status: "marked" },
     });
   };
 
+  // ============================================================
+  // REMOVE MARK
+  // ============================================================
+  deleteMarkUser = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const postId = Number(req.params.postId);
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (!postId || Number.isNaN(postId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "postId tidak valid" });
+    }
+
+    const existing = await db
+      .select()
+      .from(markTable)
+      .where(and(eq(markTable.userId, userId), eq(markTable.postId, postId)))
+      .limit(1);
+
+    if (existing.length === 0 || existing[0].status === "unmarked") {
+      return res.status(404).json({
+        success: false,
+        message: "Post belum ditandai",
+        data: { postId, status: "unmarked" },
+      });
+    }
+
+    await db
+      .update(markTable)
+      .set({ status: "unmarked" })
+      .where(eq(markTable.id, existing[0].id));
+
+    return res.status(200).json({
+      success: true,
+      message: "Tanda dihapus",
+      data: { postId, status: "unmarked" },
+    });
+  };
+
+  // ============================================================
+  // GET SEMUA MARK USER
+  // ============================================================
   getMarkUser = async (req: Request, res: Response) => {
-    const userId = (req as any).user?.id; // Ambil ID user dari middleware auth
+    const userId = (req as any).user?.id;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -53,13 +132,14 @@ class MarkController {
       .where(
         and(
           eq(markTable.userId, userId),
-          eq(postsTable.status, "published"), // Pastikan postnya masih dipublish
+          eq(markTable.status, "marked"),
+          eq(postsTable.status, "published"),
         ),
       );
 
     return res.status(200).json({
       success: true,
-      message: "berhasil dapat data favorite",
+      message: "berhasil dapat data mark",
       data: result,
     });
   };

@@ -4,7 +4,7 @@ import {
   userPostParamsSchema,
 } from "../../validations/post.validation";
 import { db } from "../../config/db";
-import { postsTable } from "../../config/schema";
+import { postsTable, usersTable } from "../../config/schema";
 import { and, desc, eq } from "drizzle-orm";
 
 export class UsersController {
@@ -29,6 +29,33 @@ export class UsersController {
         message: "user post retrieved successfully",
         data: {
           posts,
+        },
+      });
+    } catch (error: any) {
+      console.error("get post by user id ERROR : ", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "internal server error",
+        error: error.message,
+      });
+    }
+  };
+  getUserInfo = async (req: Request, res: Response) => {
+    try {
+      const validatedParams = userIdSchema.parse(req.params);
+      const { userId } = validatedParams;
+
+      const user = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, userId));
+
+      return res.status(200).json({
+        success: true,
+        message: "user post retrieved successfully",
+        data: {
+          user,
         },
       });
     } catch (error: any) {
